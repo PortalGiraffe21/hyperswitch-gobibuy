@@ -1521,6 +1521,7 @@ fn get_cards_required_fields() -> HashMap<Connector, RequiredFieldFinal> {
                 .concat(),
             ),
         ),
+        (Connector::Nestpay, fields(vec![], vec![], card_basic())),
         (Connector::Nexinets, fields(vec![], vec![], card_basic())),
         (
             Connector::Nexixpay,

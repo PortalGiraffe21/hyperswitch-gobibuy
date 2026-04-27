@@ -103,6 +103,7 @@ impl ForeignTryFrom<api_enums::Connector> for euclid::enums::RoutableConnectors 
             api_enums::Connector::Mollie => Self::Mollie,
             api_enums::Connector::Moneris => Self::Moneris,
             api_enums::Connector::Multisafepay => Self::Multisafepay,
+            api_enums::Connector::Nestpay => Self::Nestpay,
             api_enums::Connector::Netcetera => {
                 Err(common_utils::errors::ValidationError::InvalidValue {
                     message: "netcetera is not a routable connector".to_string(),

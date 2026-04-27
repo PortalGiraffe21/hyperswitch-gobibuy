@@ -710,6 +710,9 @@ impl ForeignTryFrom<(Connector, &ConnectorAuthType, Option<&serde_json::Value>)>
                 }),
                 _ => Err(err("Multisafepay requires HeaderKey auth type")),
             },
+            Connector::Nestpay => Err(err(
+                "Nestpay is not supported via the unified connector service",
+            )),
             Connector::Nexixpay => match auth {
                 ConnectorAuthType::HeaderKey { api_key } => Ok(Self::Nexixpay {
                     api_key: api_key.clone(),

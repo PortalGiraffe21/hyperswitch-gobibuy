@@ -135,6 +135,7 @@ pub enum Connector {
     Mollie,
     Moneris,
     Multisafepay,
+    Nestpay,
     Netcetera,
     Nexinets,
     Nexixpay,
@@ -369,6 +370,7 @@ impl Connector {
             | Self::Mollie
             | Self::Moneris
             | Self::Multisafepay
+            | Self::Nestpay
             | Self::Nexinets
             | Self::Nexixpay
             | Self::Nomupay

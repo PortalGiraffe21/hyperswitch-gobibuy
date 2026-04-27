@@ -376,6 +376,10 @@ impl ConnectorAuthTypeAndMetadataValidation<'_> {
                 multisafepay::transformers::MultisafepayAuthType::try_from(self.auth_type)?;
                 Ok(())
             }
+            api_enums::Connector::Nestpay => {
+                nestpay::transformers::NestpayAuthType::try_from(self.auth_type)?;
+                Ok(())
+            }
             api_enums::Connector::Netcetera => {
                 netcetera::transformers::NetceteraAuthType::try_from(self.auth_type)?;
                 netcetera::transformers::NetceteraMetaData::try_from(self.connector_meta_data)?;

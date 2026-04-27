@@ -86,6 +86,7 @@ pub struct ConnectorAuthentication {
     pub moneris: Option<SignatureKey>,
     pub mpgs: Option<HeaderKey>,
     pub multisafepay: Option<HeaderKey>,
+    pub nestpay: Option<SignatureKey>,
     pub netcetera: Option<HeaderKey>,
     pub nexinets: Option<BodyKey>,
     pub nexixpay: Option<HeaderKey>,

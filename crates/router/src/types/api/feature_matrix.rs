@@ -364,6 +364,9 @@ impl FeatureMatrixConnectorData {
                 enums::Connector::Multisafepay => {
                     Ok(ConnectorEnum::Old(Box::new(connector::Multisafepay::new())))
                 }
+                enums::Connector::Nestpay => {
+                    Ok(ConnectorEnum::Old(Box::new(connector::Nestpay::new())))
+                }
                 enums::Connector::Netcetera => {
                     Ok(ConnectorEnum::Old(Box::new(&connector::Netcetera)))
                 }
