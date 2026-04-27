@@ -29,10 +29,11 @@ use hyperswitch_domain_models::{
         SupportedPaymentMethods, SupportedPaymentMethodsExt,
     },
     types::{
-        PaymentsAuthorizeRouterData, PaymentsSyncRouterData, RefundSyncRouterData,
-        RefundsRouterData,
+        PaymentsAuthorizeRouterData, PaymentsSyncRouterData, RefundExecuteRouterData,
+        RefundSyncRouterData, RefundsRouterData,
     },
 };
+
 use hyperswitch_interfaces::{
     api::{
         self, ConnectorCommon, ConnectorCommonExt, ConnectorIntegration, ConnectorSpecifications,
@@ -522,14 +523,14 @@ impl ConnectorIntegration<Execute, RefundsData, RefundsResponseData> for Nestpay
         event_builder.map(|i| i.set_response_body(&response));
         router_env::logger::info!(connector_response=?response);
 
-        crate::types::RefundsResponseRouterData::<Execute, response::NestpayCC5Response>::try_from(
-            crate::types::ResponseRouterData {
+        let response: RefundsRouterData<Execute> = 
+            RefundExecuteRouterData::try_from(crate::types::ResponseRouterData {
                 response,
                 data: data.clone(),
                 http_code: res.status_code,
-            },
-        )
-        .change_context(errors::ConnectorError::ResponseHandlingFailed)
+            })
+            .change_context(errors::ConnectorError::ResponseHandlingFailed)?;
+        Ok(response)
     }
 
     fn get_error_response(
@@ -624,14 +625,15 @@ impl ConnectorIntegration<RSync, RefundsData, RefundsResponseData> for Nestpay {
         event_builder.map(|i| i.set_response_body(&response));
         router_env::logger::info!(connector_response=?response);
 
-        crate::types::RefundsResponseRouterData::<RSync, response::NestpayCC5Response>::try_from(
-            crate::types::ResponseRouterData {
+        let response: RefundSyncRouterData = 
+            RefundsRouterData::<RSync>::try_from(crate::types::ResponseRouterData {
                 response,
                 data: data.clone(),
                 http_code: res.status_code,
-            },
-        )
-        .change_context(errors::ConnectorError::ResponseHandlingFailed)
+            })
+            .change_context(errors::ConnectorError::ResponseHandlingFailed)?;
+        Ok(response)
+
     }
 
     fn get_error_response(
