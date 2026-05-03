@@ -139,6 +139,17 @@ impl TryFrom<&NestpayRouterData<&hyperswitch_domain_models::types::PaymentsAutho
                         name,
                     )
                 }
+                payment_method_data::PaymentMethodData::Wallet(
+                    payment_method_data::WalletData::ApplePay(apple_pay_data)
+                ) => {
+                    // After network_tokenization decryption, Hyperswitch should have
+                    // converted this to a Card variant. If it reaches here as ApplePay,
+                    // the decryption config is missing or misconfigured.
+                    return Err(errors::ConnectorError::NotImplemented(
+                        "Apple Pay must be decrypted to card via network_tokenization before reaching NestPay".to_string(),
+                    )
+                    .into())
+                }
                 _ => {
                     return Err(errors::ConnectorError::NotImplemented(
                         "Payment method not supported by NestPay".to_string(),

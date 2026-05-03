@@ -706,6 +706,19 @@ static NESTPAY_SUPPORTED_PAYMENT_METHODS: LazyLock<SupportedPaymentMethods> =
                 ),
             },
         );
+        supported.add(
+            enums::PaymentMethod::Wallet,
+            enums::PaymentMethodType::ApplePay,
+            PaymentMethodDetails {
+                mandates: enums::FeatureStatus::NotSupported,
+                refunds: enums::FeatureStatus::NotSupported,
+                supported_capture_methods: vec![
+                    enums::CaptureMethod::Automatic,
+                ],
+                specific_features: None,
+            },
+        );
+
 
         supported.add(
             enums::PaymentMethod::Card,

@@ -85,6 +85,12 @@ ttl_for_storage_in_secs = 220752000
 vault_encryption_key = ""
 vault_private_key = ""
 
+[applepay_decrypt_keys]
+apple_pay_ppc = ""
+apple_pay_ppc_key = ""
+apple_pay_merchant_cert = ""
+apple_pay_merchant_cert_key = ""
+
 [redis]
 host = "redis-standalone"
 port = 6379
@@ -450,6 +456,7 @@ globalpay = { long_lived_token = false, payment_method = "card", flow = "mandate
 dwolla = { long_lived_token = true, payment_method = "bank_debit" }
 finix= { long_lived_token = false, payment_method = "card,wallet" }
 paysafe= { long_lived_token = false, payment_method = "card,wallet" ,payment_method_type = { type = "enable_only", list = "apple_pay,credit,debit"},allowed_card_authentication_type= "no_three_ds"}
+nestpay = { long_lived_token = false, payment_method = "card,wallet", apple_pay_pre_decrypt_flow = "network_tokenization" }
 
 [temp_locker_enable_config]
 stripe = { payment_method = "bank_transfer" }
@@ -1437,3 +1444,9 @@ backup_file_path = "./config/superposition_seed.toml" # Path to a local file for
 "28" = { description = "Retry after 6 days", recommended_action = "retry_after_6_days" }
 "29" = { description = "Retry after 8 days", recommended_action = "retry_after_8_days" }
 "30" = { description = "Retry after 10 days", recommended_action = "retry_after_10_days" }
+
+[applepay_merchant_configs]
+merchant_cert = ""
+merchant_cert_key = ""
+common_merchant_identifier = "merchant.com.gobibuy"
+applepay_endpoint = "https://apple-pay-gateway-cert.apple.com/"
