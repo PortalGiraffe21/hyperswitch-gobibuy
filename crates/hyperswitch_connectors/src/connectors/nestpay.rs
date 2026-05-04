@@ -253,11 +253,17 @@ impl ConnectorIntegration<Authorize, PaymentsAuthorizeData, PaymentsResponseData
 
     fn get_url(
         &self,
-        _req: &PaymentsAuthorizeRouterData,
+        req: &PaymentsAuthorizeRouterData,
         connectors: &Connectors,
     ) -> CustomResult<String, errors::ConnectorError> {
-        Ok(format!("{}/fim/api", self.base_url(connectors)))
+        let endpoint = if req.auth_type == enums::AuthenticationType::ThreeDs {
+            "/fim/est3Dgate"
+        } else {
+            "/fim/api"
+        };
+        Ok(format!("{}{}", self.base_url(connectors), endpoint))
     }
+
 
     fn get_request_body(
         &self,
@@ -698,7 +704,7 @@ static NESTPAY_SUPPORTED_PAYMENT_METHODS: LazyLock<SupportedPaymentMethods> =
                 specific_features: Some(
                     api_models::feature_matrix::PaymentMethodSpecificFeatures::Card(
                         api_models::feature_matrix::CardSpecificFeatures {
-                            three_ds: common_enums::FeatureStatus::NotSupported,
+                            three_ds: common_enums::FeatureStatus::Supported,
                             no_three_ds: common_enums::FeatureStatus::Supported,
                             supported_card_networks: supported_card_networks.clone(),
                         },
@@ -730,7 +736,7 @@ static NESTPAY_SUPPORTED_PAYMENT_METHODS: LazyLock<SupportedPaymentMethods> =
                 specific_features: Some(
                     api_models::feature_matrix::PaymentMethodSpecificFeatures::Card(
                         api_models::feature_matrix::CardSpecificFeatures {
-                            three_ds: common_enums::FeatureStatus::NotSupported,
+                            three_ds: common_enums::FeatureStatus::Supported,
                             no_three_ds: common_enums::FeatureStatus::Supported,
                             supported_card_networks,
                         },

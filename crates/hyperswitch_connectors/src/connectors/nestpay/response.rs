@@ -22,6 +22,12 @@ pub struct NestpayCC5Response {
     pub trans_id: Option<String>,
     #[serde(rename = "ErrMsg")]
     pub err_msg: Option<String>,
+    #[serde(rename = "PaReq")]
+    pub pa_req: Option<String>,
+    #[serde(rename = "ACSUrl")]
+    pub acs_url: Option<String>,
+    #[serde(rename = "MD")]
+    pub md: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
