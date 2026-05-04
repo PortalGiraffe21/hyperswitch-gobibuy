@@ -140,11 +140,8 @@ impl TryFrom<&NestpayRouterData<&hyperswitch_domain_models::types::PaymentsAutho
                     )
                 }
                 payment_method_data::PaymentMethodData::Wallet(
-                    payment_method_data::WalletData::ApplePay(apple_pay_data)
+                    payment_method_data::WalletData::ApplePay(_)  // fix 1
                 ) => {
-                    // After network_tokenization decryption, Hyperswitch should have
-                    // converted this to a Card variant. If it reaches here as ApplePay,
-                    // the decryption config is missing or misconfigured.
                     return Err(errors::ConnectorError::NotImplemented(
                         "Apple Pay must be decrypted to card via network_tokenization before reaching NestPay".to_string(),
                     )
@@ -328,8 +325,7 @@ impl<F, T>
                 let mut form_fields = std::collections::HashMap::new();
                 form_fields.insert("PaReq".to_string(), pa_req.clone());
                 form_fields.insert("TermUrl".to_string(), 
-                    item.data.request.get_return_url()
-                        .unwrap_or_default());
+                item.data.return_url.clone().unwrap_or_default());
                 if let Some(md_val) = md {
                     form_fields.insert("MD".to_string(), md_val.clone());
                 }
