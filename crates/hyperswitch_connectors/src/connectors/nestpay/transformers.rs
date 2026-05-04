@@ -264,9 +264,6 @@ pub fn build_sync_request(
 }
 
 fn nestpay_attempt_status(response: &NestpayCC5Response) -> enums::AttemptStatus {
-    if response.pa_req.is_some() && response.acs_url.is_some() {
-        return enums::AttemptStatus::AuthenticationPending;
-    }
     match response.response.as_deref() {
         Some("Approved") => enums::AttemptStatus::Charged,
         _ => enums::AttemptStatus::Failure,
@@ -316,27 +313,7 @@ impl<F, T>
         item: ResponseRouterData<F, NestpayCC5Response, T, PaymentsResponseData>,
     ) -> Result<Self, Self::Error> {
         let status = nestpay_attempt_status(&item.response);
-        let redirection_data = match (
-            &item.response.acs_url,
-            &item.response.pa_req,
-            &item.response.md,
-        ) {
-            (Some(acs_url), Some(pa_req), md) => {
-                let mut form_fields = std::collections::HashMap::new();
-                form_fields.insert("PaReq".to_string(), pa_req.clone());
-                form_fields.insert("TermUrl".to_string(), 
-                item.data.return_url.clone().unwrap_or_default());
-                if let Some(md_val) = md {
-                    form_fields.insert("MD".to_string(), md_val.clone());
-                }
-                Some(hyperswitch_domain_models::router_response_types::RedirectForm::Form {
-                    endpoint: acs_url.clone(),
-                    method: common_utils::request::Method::Post,
-                    form_fields,
-                })
-            }
-            _ => None,
-        };
+        let redirection_data = None;
 
 
         let order_id = item
