@@ -8,26 +8,22 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # We set this to 4 hours because Swap builds are slower
-    timeout-minutes: 240 
-    
+    timeout-minutes: 240
+
     steps:
       - uses: actions/checkout@v4
 
       - name: Maximize Build Space & Create Swap
         run: |
-          # 1. Clear out pre-installed software
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf "/usr/local/share/boost"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-          
-          # 2. Disable existing swap and remove the file if it exists
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost \
+            "$AGENT_TOOLSDIRECTORY" /usr/local/lib/android /usr/share/swift \
+            /usr/local/share/chromium /usr/share/miniconda
+          sudo apt-get clean
+          df -h
+
           sudo swapoff -a || true
           sudo rm -f /swapfile
-          
-          # 3. Create the new 16GB Swap file
-          sudo fallocate -l 16G /swapfile
+          sudo fallocate -l 24G /swapfile
           sudo chmod 600 /swapfile
           sudo mkswap /swapfile
           sudo swapon /swapfile
@@ -50,7 +46,6 @@ jobs:
         with:
           context: .
           push: true
-          # Note: No 'platforms' flag needed if your VPS is standard Intel/AMD
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/hyperswitch-router:gobibuy
           cache-from: type=gha
           cache-to: type=gha,mode=max
