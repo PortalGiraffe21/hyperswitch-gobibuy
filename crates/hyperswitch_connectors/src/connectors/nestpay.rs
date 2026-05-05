@@ -90,7 +90,16 @@ impl ConnectorCommon for Nestpay {
     fn id(&self) -> &'static str {
         "nestpay"
     }
-
+    fn get_payment_method_data_type(
+        &self,
+        _payment_method: api::enums::PaymentMethod,
+        payment_method_type: api::enums::PaymentMethodType,
+    ) -> CustomResult<api::PaymentMethodDataType, errors::ConnectorError> {
+        match payment_method_type {
+            api::enums::PaymentMethodType::ApplePay => Ok(api::PaymentMethodDataType::ApplePayDecrypt),
+            _ => Ok(api::PaymentMethodDataType::Card),
+        }
+    }
     fn get_currency_unit(&self) -> api::CurrencyUnit {
         api::CurrencyUnit::Base
     }
