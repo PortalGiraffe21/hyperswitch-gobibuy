@@ -90,16 +90,7 @@ impl ConnectorCommon for Nestpay {
     fn id(&self) -> &'static str {
         "nestpay"
     }
-    fn get_payment_method_data_type(
-        &self,
-        _payment_method: api::enums::PaymentMethod,
-        payment_method_type: api::enums::PaymentMethodType,
-    ) -> CustomResult<api::PaymentMethodDataType, errors::ConnectorError> {
-        match payment_method_type {
-            api::enums::PaymentMethodType::ApplePay => Ok(api::PaymentMethodDataType::ApplePayDecrypt),
-            _ => Ok(api::PaymentMethodDataType::Card),
-        }
-    }
+
     fn get_currency_unit(&self) -> api::CurrencyUnit {
         api::CurrencyUnit::Base
     }
@@ -112,12 +103,23 @@ impl ConnectorCommon for Nestpay {
         connectors.nestpay.base_url.as_ref()
     }
 
+    // THIS IS THE CRITICAL FUNCTION
+    fn get_payment_method_data_type(
+        &self,
+        _payment_method: common_enums::PaymentMethod,
+        payment_method_type: common_enums::PaymentMethodType,
+    ) -> CustomResult<api_models::enums::PaymentMethodDataType, errors::ConnectorError> {
+        match payment_method_type {
+            common_enums::PaymentMethodType::ApplePay => Ok(api_models::enums::PaymentMethodDataType::ApplePayDecrypt),
+            _ => Ok(api_models::enums::PaymentMethodDataType::Card),
+        }
+    }
+
     fn get_auth_header(
         &self,
         _auth_type: &ConnectorAuthType,
     ) -> CustomResult<Vec<(String, hyperswitch_masking::Maskable<String>)>, errors::ConnectorError>
     {
-        // NestPay authenticates via credentials embedded in the CC5Request XML body.
         Ok(vec![])
     }
 
