@@ -140,12 +140,28 @@ impl TryFrom<&NestpayRouterData<&hyperswitch_domain_models::types::PaymentsAutho
                     )
                 }
                 payment_method_data::PaymentMethodData::Wallet(
-                    payment_method_data::WalletData::ApplePay(_)  // fix 1
+                    payment_method_data::WalletData::ApplePay(_)
                 ) => {
-                    return Err(errors::ConnectorError::NotImplemented(
-                        "Apple Pay must be decrypted to card via network_tokenization before reaching NestPay".to_string(),
-                    )
-                    .into())
+                    match &item.router_data.payment_method_token {
+                        Some(hyperswitch_domain_models::router_data::PaymentMethodToken::ApplePayDecrypt(decrypted)) => {
+                            let exp = format!(
+                                "{}/{}",
+                                decrypted.application_expiration_month.peek(),
+                                decrypted.application_expiration_year.peek()
+                            );
+                            (
+                                Some(decrypted.application_primary_account_number.clone()),
+                                Some(Secret::new(exp)),
+                                None,
+                                String::new(),
+                            )
+                        }
+                        _ => {
+                            return Err(errors::ConnectorError::NotImplemented(
+                                "Apple Pay decrypted token not available for NestPay".to_string(),
+                            ).into())
+                        }
+                    }
                 }
                 _ => {
                     return Err(errors::ConnectorError::NotImplemented(

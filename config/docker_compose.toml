@@ -27,9 +27,9 @@ use_xray_generator = false                                  # Set this to true f
 bg_metrics_collection_interval_in_secs = 15                 # Interval for collecting the metrics in background thread
 
 [master_database]
-username = "db_user"
-password = "db_pass"
-host = "pg"
+username = "flexuser"
+password = "3Vnrqyu2sH1bq7y4BvzVmsJX0Rc2nFbeQ"
+host = "172.17.0.1"
 port = 5432
 dbname = "hyperswitch_db"
 pool_size = 5
@@ -42,9 +42,9 @@ redis_lock_timeout_in_seconds = 100
 redis_ttl_in_seconds = 172800
 
 [replica_database]
-username = "db_user"
-password = "db_pass"
-host = "pg"
+username = "flexuser"
+password = "3Vnrqyu2sH1bq7y4BvzVmsJX0Rc2nFbeQ"
+host = "172.17.0.1"
 port = 5432
 dbname = "hyperswitch_db"
 pool_size = 5
@@ -302,8 +302,8 @@ zen.secondary_base_url = "https://secure.zen-test.com/"
 zsl.base_url = "https://api.sitoffalb.net/"
 
 
-[pm_filters.default]
-apple_pay = { country = "AU,CN,HK,JP,MO,MY,NZ,SG,TW,AM,AT,AZ,BY,BE,BG,HR,CY,CZ,DK,EE,FO,FI,FR,GE,DE,GR,GL,GG,HU,IS,IE,IM,IT,KZ,JE,LV,LI,LT,LU,MT,MD,MC,ME,NL,NO,PL,PT,RO,SM,RS,SK,SI,ES,SE,CH,UA,GB,AR,CO,CR,BR,MX,PE,BH,IL,JO,KW,PS,QA,SA,AE,CA,UM,US,KR,VN,MA,ZA,VA,CL,SV,GT,HN,PA", currency = "AED,AUD,CHF,CAD,EUR,GBP,HKD,SGD,USD" }
+[pm_filters.nestpay]
+apple_pay = { country = "MK,RS,HR,SI,ME,BA,AL,GR,BG,RO,HU,CZ,SK,PL,AT,DE,CH,GB,US,CA,AU", currency = "MKD,EUR,USD,GBP,CHF,HRK,RSD,ALL,RON,HUF,CZK,PLN" }
 
 [connectors.supported]
 wallets = ["klarna", "mifinity", "braintree", "applepay", "amazonpay","finix", "worldpayxml"]
@@ -1088,7 +1088,7 @@ bank_debit.sepa = { connector_list = "gocardless,adyen" }
 card.credit.connector_list = "checkout,stripe,adyen,authorizedotnet,cybersource,datatrans,worldpay,nmi,bankofamerica,wellsfargo,bamboraapac,nexixpay,novalnet,paypal,archipel,mollie"
 card.debit.connector_list = "checkout,stripe,adyen,authorizedotnet,cybersource,datatrans,worldpay,nmi,bankofamerica,wellsfargo,bamboraapac,nexixpay,novalnet,paypal,archipel,mollie"
 pay_later.klarna.connector_list = "adyen"
-wallet.apple_pay.connector_list = "stripe,adyen,cybersource,bankofamerica,novalnet,authorizedotnet,worldpayxml"
+wallet.apple_pay.connector_list = "stripe,adyen,cybersource,bankofamerica,novalnet,authorizedotnet,worldpayxml,nestpay"
 wallet.samsung_pay.connector_list = "cybersource"
 wallet.google_pay.connector_list = "stripe,adyen,cybersource,bankofamerica,novalnet,authorizedotnet,worldpayxml"
 wallet.paypal.connector_list = "adyen,novalnet"
@@ -1189,9 +1189,9 @@ host = "http://localhost:8123"
 database_name = "default"
 
 [analytics.sqlx]
-username = "db_user"
-password = "db_pass"
-host = "pg"
+username = "flexuser"
+password = "3Vnrqyu2sH1bq7y4BvzVmsJX0Rc2nFbeQ"
+host = "172.17.0.1"
 port = 5432
 dbname = "hyperswitch_db"
 pool_size = 5
@@ -1313,7 +1313,7 @@ id = "12345"
 card_networks = "Visa, AmericanExpress, Mastercard"
 
 [network_tokenization_supported_connectors]
-connector_list = "adyen,cybersource,peachpayments,trustpay"
+connector_list = "adyen,cybersource,peachpayments,trustpay,nestpay"
 
 # EmailClient configuration. Only applicable when the `email` feature flag is enabled.
 [email]
