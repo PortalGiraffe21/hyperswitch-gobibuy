@@ -1,12 +1,39 @@
-- name: Build and push
-  uses: docker/build-push-action@v6
-  with:
-    context: .
-    push: true
-    tags: ${{ secrets.DOCKERHUB_USERNAME }}/hyperswitch-router:gobibuy
-    # 'gha' cache is the key here. It saves the cargo dependencies 
-    # so only your connector changes get recompiled.
-    cache-from: type=gha
-    cache-to: type=gha,mode=max 
-    build-args: |
-      RUSTFLAGS=-C link-arg=-fuse-ld=mold
+name: Build and Push Hyperswitch
+
+on:
+  push:
+    branches:
+      - main  # Change this to your active development branch
+
+jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Pull the code from your repo into the runner
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Set up the specialized Docker builder (required for GHA caching)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 3. Authenticate with DockerHub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 4. The actual build and push (Your original block)
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/hyperswitch-router:gobibuy
+          # These two lines are what make the build "incremental" 
+          # instead of a 20-minute clean build every time.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max 
+          build-args: |
+            RUSTFLAGS=-C link-arg=-fuse-ld=mold
