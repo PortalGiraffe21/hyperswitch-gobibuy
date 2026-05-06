@@ -8,6 +8,7 @@ on:
 jobs:
   docker-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 360
     steps:
       # 1. Pull the code from your repo into the runner
       - name: Checkout code
@@ -31,9 +32,9 @@ jobs:
           context: .
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/hyperswitch-router:gobibuy
-          # These two lines are what make the build "incremental" 
-          # instead of a 20-minute clean build every time.
           cache-from: type=gha
           cache-to: type=gha,mode=max 
           build-args: |
             RUSTFLAGS=-C link-arg=-fuse-ld=mold
+            CARGO_NET_GIT_FETCH_WITH_CLI=true
+            CARGO_BUILD_JOBS=2
