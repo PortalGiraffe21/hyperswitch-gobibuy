@@ -62,6 +62,21 @@ pub struct NestpayCC5Request {
     pub mode: String,
     #[serde(skip_serializing_if = "Option::is_none", rename = "BillTo")]
     pub bill_to: Option<NestpayBillTo>,
+    /// "3d_pay" for Apple Pay S2S, "3d_pay_hosting" for hosted-3DS card redirect
+    #[serde(skip_serializing_if = "Option::is_none", rename = "Storetype")]
+    pub storetype: Option<String>,
+    /// Apple Pay / 3DS CAVV cryptogram (Base64)
+    #[serde(skip_serializing_if = "Option::is_none", rename = "PayerAuthenticationCode")]
+    pub payer_authentication_code: Option<Secret<String>>,
+    /// ECI value from Apple Pay token (e.g. "05" Visa, "02" Mastercard)
+    #[serde(skip_serializing_if = "Option::is_none", rename = "Eci")]
+    pub eci: Option<String>,
+    /// 3DS authentication status indicator — "Y" signals successful authentication
+    #[serde(skip_serializing_if = "Option::is_none", rename = "Md")]
+    pub md: Option<String>,
+    /// Apple Pay transaction identifier (XID)
+    #[serde(skip_serializing_if = "Option::is_none", rename = "PayerTxnId")]
+    pub payer_txn_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

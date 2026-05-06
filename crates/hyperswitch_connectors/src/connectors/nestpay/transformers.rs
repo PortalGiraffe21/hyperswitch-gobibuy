@@ -119,7 +119,8 @@ impl TryFrom<&NestpayRouterData<&hyperswitch_domain_models::types::PaymentsAutho
             .map(|m| m.api_username)
             .unwrap_or_else(|_| auth.client_id.peek().to_string());
 
-        let (card_number, expires, cvv2val, bill_name) =
+        // (card_number, expires, cvv2val, bill_name, storetype, payer_auth_code, eci, md, payer_txn_id)
+        let (card_number, expires, cvv2val, bill_name, storetype, payer_authentication_code, eci, md, payer_txn_id) =
             match &item.router_data.request.payment_method_data {
                 payment_method_data::PaymentMethodData::Card(card) => {
                     let exp = format!(
@@ -137,23 +138,35 @@ impl TryFrom<&NestpayRouterData<&hyperswitch_domain_models::types::PaymentsAutho
                         Some(Secret::new(exp)),
                         Some(card.card_cvc.clone()),
                         name,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
                     )
                 }
                 payment_method_data::PaymentMethodData::Wallet(
-                    payment_method_data::WalletData::ApplePay(_)
+                    payment_method_data::WalletData::ApplePay(apple_pay_data)
                 ) => {
                     match &item.router_data.payment_method_token {
                         Some(hyperswitch_domain_models::router_data::PaymentMethodToken::ApplePayDecrypt(decrypted)) => {
+                            let year = decrypted.application_expiration_year.peek();
+                            let year_2d = &year[year.len().saturating_sub(2)..];
                             let exp = format!(
                                 "{}/{}",
                                 decrypted.application_expiration_month.peek(),
-                                decrypted.application_expiration_year.peek()
+                                year_2d
                             );
                             (
                                 Some(decrypted.application_primary_account_number.clone()),
                                 Some(Secret::new(exp)),
                                 None,
                                 String::new(),
+                                Some("3d_pay".to_string()),
+                                Some(decrypted.payment_data.online_payment_cryptogram.clone()),
+                                decrypted.payment_data.eci_indicator.clone(),
+                                Some("Y".to_string()),
+                                Some(apple_pay_data.transaction_identifier.clone()),
                             )
                         }
                         _ => {
@@ -203,6 +216,11 @@ impl TryFrom<&NestpayRouterData<&hyperswitch_domain_models::types::PaymentsAutho
             } else {
                 Some(NestpayBillTo { name: bill_name })
             },
+            storetype,
+            payer_authentication_code,
+            eci,
+            md,
+            payer_txn_id,
         })
     }
 }
@@ -249,6 +267,11 @@ impl<F> TryFrom<&NestpayRouterData<&hyperswitch_domain_models::types::RefundsRou
             cvv2val: None,
             mode: mode.to_string(),
             bill_to: None,
+            storetype: None,
+            payer_authentication_code: None,
+            eci: None,
+            md: None,
+            payer_txn_id: None,
         })
     }
 }
@@ -276,6 +299,11 @@ pub fn build_sync_request(
         cvv2val: None,
         mode: mode.to_string(),
         bill_to: None,
+        storetype: None,
+        payer_authentication_code: None,
+        eci: None,
+        md: None,
+        payer_txn_id: None,
     }
 }
 

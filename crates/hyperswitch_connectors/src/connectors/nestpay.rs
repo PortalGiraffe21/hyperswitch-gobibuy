@@ -103,18 +103,6 @@ impl ConnectorCommon for Nestpay {
         connectors.nestpay.base_url.as_ref()
     }
 
-    // THIS IS THE CRITICAL FUNCTION
-    fn get_payment_method_data_type(
-        &self,
-        _payment_method: common_enums::PaymentMethod,
-        payment_method_type: common_enums::PaymentMethodType,
-    ) -> CustomResult<api_models::enums::PaymentMethodDataType, errors::ConnectorError> {
-        match payment_method_type {
-            common_enums::PaymentMethodType::ApplePay => Ok(api_models::enums::PaymentMethodDataType::ApplePayDecrypt),
-            _ => Ok(api_models::enums::PaymentMethodDataType::Card),
-        }
-    }
-
     fn get_auth_header(
         &self,
         _auth_type: &ConnectorAuthType,
