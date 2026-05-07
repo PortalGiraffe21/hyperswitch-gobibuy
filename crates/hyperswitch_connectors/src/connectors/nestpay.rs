@@ -201,7 +201,6 @@ impl api::PaymentSession for Nestpay {}
 impl api::ConnectorAccessToken for Nestpay {}
 impl api::MandateSetup for Nestpay {}
 impl api::PaymentAuthorize for Nestpay {}
-impl api::PaymentsCompleteAuthorize for Nestpay {}
 impl api::PaymentSync for Nestpay {}
 impl api::PaymentCapture for Nestpay {}
 impl api::PaymentVoid for Nestpay {}
@@ -210,22 +209,6 @@ impl api::RefundExecute for Nestpay {}
 impl api::RefundSync for Nestpay {}
 impl api::PaymentToken for Nestpay {}
 
-impl ConnectorRedirectResponse for Nestpay {
-    fn get_flow_type(
-        &self,
-        _query_params: &str,
-        _json_payload: Option<serde_json::Value>,
-        action: enums::PaymentAction,
-    ) -> CustomResult<enums::CallConnectorAction, errors::ConnectorError> {
-        match action {
-            enums::PaymentAction::CompleteAuthorize
-            | enums::PaymentAction::PSync
-            | enums::PaymentAction::PaymentAuthenticateCompleteAuthorize => {
-                Ok(enums::CallConnectorAction::Trigger)
-            }
-        }
-    }
-}
 
 impl ConnectorIntegration<PaymentMethodToken, PaymentMethodTokenizationData, PaymentsResponseData>
     for Nestpay
