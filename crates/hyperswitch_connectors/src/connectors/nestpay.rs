@@ -16,34 +16,38 @@ use hyperswitch_domain_models::{
     router_data::{AccessToken, ConnectorAuthType, ErrorResponse, RouterData},
     router_flow_types::{
         access_token_auth::AccessTokenAuth,
-        payments::{Authorize, Capture, PSync, PaymentMethodToken, Session, SetupMandate, Void},
+        payments::{
+            Authorize, Capture, CompleteAuthorize, PSync, PaymentMethodToken, Session,
+            SetupMandate, Void,
+        },
         refunds::{Execute, RSync},
     },
     router_request_types::{
-        AccessTokenRequestData, PaymentMethodTokenizationData, PaymentsAuthorizeData,
-        PaymentsCancelData, PaymentsCaptureData, PaymentsSessionData, PaymentsSyncData,
-        RefundsData, SetupMandateRequestData,
+        AccessTokenRequestData, CompleteAuthorizeData, PaymentMethodTokenizationData,
+        PaymentsAuthorizeData, PaymentsCancelData, PaymentsCaptureData, PaymentsSessionData,
+        PaymentsSyncData, RefundsData, SetupMandateRequestData,
     },
     router_response_types::{
         ConnectorInfo, PaymentMethodDetails, PaymentsResponseData, RefundsResponseData,
         SupportedPaymentMethods, SupportedPaymentMethodsExt,
     },
     types::{
-        PaymentsAuthorizeRouterData, PaymentsSyncRouterData, RefundExecuteRouterData,
-        RefundSyncRouterData, RefundsRouterData,
+        PaymentsAuthorizeRouterData, PaymentsCompleteAuthorizeRouterData, PaymentsSyncRouterData,
+        RefundExecuteRouterData, RefundSyncRouterData, RefundsRouterData,
     },
 };
 
 use hyperswitch_interfaces::{
     api::{
-        self, ConnectorCommon, ConnectorCommonExt, ConnectorIntegration, ConnectorSpecifications,
-        ConnectorValidation,
+        self, ConnectorCommon, ConnectorCommonExt, ConnectorIntegration, ConnectorRedirectResponse,
+        ConnectorSpecifications, ConnectorValidation,
     },
     configs::Connectors,
     errors,
     events::connector_api_logs::ConnectorEvent,
     types::{
-        PaymentsAuthorizeType, PaymentsSyncType, RefundExecuteType, RefundSyncType, Response,
+        PaymentsAuthorizeType, PaymentsCompleteAuthorizeType, PaymentsSyncType, RefundExecuteType,
+        RefundSyncType, Response,
     },
     webhooks,
 };
@@ -197,6 +201,7 @@ impl api::PaymentSession for Nestpay {}
 impl api::ConnectorAccessToken for Nestpay {}
 impl api::MandateSetup for Nestpay {}
 impl api::PaymentAuthorize for Nestpay {}
+impl api::PaymentsCompleteAuthorize for Nestpay {}
 impl api::PaymentSync for Nestpay {}
 impl api::PaymentCapture for Nestpay {}
 impl api::PaymentVoid for Nestpay {}
@@ -204,6 +209,23 @@ impl api::Refund for Nestpay {}
 impl api::RefundExecute for Nestpay {}
 impl api::RefundSync for Nestpay {}
 impl api::PaymentToken for Nestpay {}
+
+impl ConnectorRedirectResponse for Nestpay {
+    fn get_flow_type(
+        &self,
+        _query_params: &str,
+        _json_payload: Option<serde_json::Value>,
+        action: enums::PaymentAction,
+    ) -> CustomResult<enums::CallConnectorAction, errors::ConnectorError> {
+        match action {
+            enums::PaymentAction::CompleteAuthorize
+            | enums::PaymentAction::PSync
+            | enums::PaymentAction::PaymentAuthenticateCompleteAuthorize => {
+                Ok(enums::CallConnectorAction::Trigger)
+            }
+        }
+    }
+}
 
 impl ConnectorIntegration<PaymentMethodToken, PaymentMethodTokenizationData, PaymentsResponseData>
     for Nestpay
@@ -252,15 +274,10 @@ impl ConnectorIntegration<Authorize, PaymentsAuthorizeData, PaymentsResponseData
 
     fn get_url(
         &self,
-        req: &PaymentsAuthorizeRouterData,
+        _req: &PaymentsAuthorizeRouterData,
         connectors: &Connectors,
     ) -> CustomResult<String, errors::ConnectorError> {
-        let endpoint = if req.auth_type == enums::AuthenticationType::ThreeDs {
-            "/fim/est3Dgate"
-        } else {
-            "/fim/api"
-        };
-        Ok(format!("{}{}", self.base_url(connectors), endpoint))
+        Ok(format!("{}/fim/api", self.base_url(connectors)))
     }
 
 
@@ -314,6 +331,153 @@ impl ConnectorIntegration<Authorize, PaymentsAuthorizeData, PaymentsResponseData
         event_builder: Option<&mut ConnectorEvent>,
         res: Response,
     ) -> CustomResult<PaymentsAuthorizeRouterData, errors::ConnectorError> {
+        let response_str = String::from_utf8(res.response.to_vec())
+            .change_context(errors::ConnectorError::ResponseDeserializationFailed)?;
+
+        let response: response::NestpayCC5Response = response_str
+            .parse_xml()
+            .change_context(errors::ConnectorError::ResponseDeserializationFailed)?;
+
+        event_builder.map(|i| i.set_response_body(&response));
+        router_env::logger::info!(connector_response=?response);
+
+        RouterData::try_from(ResponseRouterData {
+            response,
+            data: data.clone(),
+            http_code: res.status_code,
+        })
+        .change_context(errors::ConnectorError::ResponseHandlingFailed)
+    }
+
+    fn get_error_response(
+        &self,
+        res: Response,
+        event_builder: Option<&mut ConnectorEvent>,
+    ) -> CustomResult<ErrorResponse, errors::ConnectorError> {
+        self.build_error_response(res, event_builder)
+    }
+}
+
+// ── CompleteAuthorize (3DS step 2) ────────────────────────────────────────────
+
+impl ConnectorIntegration<CompleteAuthorize, CompleteAuthorizeData, PaymentsResponseData>
+    for Nestpay
+{
+    fn get_headers(
+        &self,
+        req: &PaymentsCompleteAuthorizeRouterData,
+        connectors: &Connectors,
+    ) -> CustomResult<Vec<(String, hyperswitch_masking::Maskable<String>)>, errors::ConnectorError>
+    {
+        self.build_headers(req, connectors)
+    }
+
+    fn get_content_type(&self) -> &'static str {
+        self.common_get_content_type()
+    }
+
+    fn get_url(
+        &self,
+        _req: &PaymentsCompleteAuthorizeRouterData,
+        connectors: &Connectors,
+    ) -> CustomResult<String, errors::ConnectorError> {
+        Ok(format!("{}/fim/api", self.base_url(connectors)))
+    }
+
+    fn get_request_body(
+        &self,
+        req: &PaymentsCompleteAuthorizeRouterData,
+        _connectors: &Connectors,
+    ) -> CustomResult<RequestContent, errors::ConnectorError> {
+        let auth = NestpayAuthType::try_from(&req.connector_auth_type)?;
+        let api_username = NestpayConnectorMeta::try_from(&req.connector_meta_data)
+            .map(|m| m.api_username)
+            .unwrap_or_else(|_| auth.client_id.peek().to_string());
+        let mode = if req.test_mode.unwrap_or(true) { "T" } else { "P" };
+
+        let redirect = req
+            .request
+            .redirect_response
+            .as_ref()
+            .ok_or(errors::ConnectorError::MissingRequiredField {
+                field_name: "redirect_response",
+            })?;
+
+        let params = redirect
+            .params
+            .as_ref()
+            .ok_or(errors::ConnectorError::MissingRequiredField {
+                field_name: "redirect_response.params",
+            })?;
+
+        let parsed: std::collections::HashMap<String, String> =
+            serde_urlencoded::from_str(params.peek())
+                .change_context(errors::ConnectorError::ResponseDeserializationFailed)?;
+
+        let pa_res = parsed
+            .get("PaRes")
+            .ok_or(errors::ConnectorError::MissingRequiredField { field_name: "PaRes" })?
+            .clone();
+        let md = parsed
+            .get("MD")
+            .ok_or(errors::ConnectorError::MissingRequiredField { field_name: "MD" })?
+            .clone();
+
+        let connector_req = requests::NestpayComplete3dsRequest {
+            name: api_username,
+            password: auth.api_password,
+            client_id: auth.client_id.peek().to_string(),
+            request_type: "Auth".to_string(),
+            order_id: req
+                .request
+                .connector_transaction_id
+                .clone()
+                .unwrap_or_else(|| req.connector_request_reference_id.clone()),
+            mode: mode.to_string(),
+            pa_res,
+            md,
+        };
+
+        let xml_bytes = utils::XmlSerializer::serialize_to_xml_bytes(
+            &connector_req,
+            "1.0",
+            Some("UTF-8"),
+            None,
+            None,
+        )
+        .change_context(errors::ConnectorError::RequestEncodingFailed)?;
+
+        Ok(RequestContent::RawBytes(xml_bytes))
+    }
+
+    fn build_request(
+        &self,
+        req: &PaymentsCompleteAuthorizeRouterData,
+        connectors: &Connectors,
+    ) -> CustomResult<Option<Request>, errors::ConnectorError> {
+        Ok(Some(
+            RequestBuilder::new()
+                .method(Method::Post)
+                .url(&PaymentsCompleteAuthorizeType::get_url(
+                    self, req, connectors,
+                )?)
+                .attach_default_headers()
+                .headers(PaymentsCompleteAuthorizeType::get_headers(
+                    self, req, connectors,
+                )?)
+                .set_body(PaymentsCompleteAuthorizeType::get_request_body(
+                    self, req, connectors,
+                )?)
+                .build(),
+        ))
+    }
+
+    fn handle_response(
+        &self,
+        data: &PaymentsCompleteAuthorizeRouterData,
+        event_builder: Option<&mut ConnectorEvent>,
+        res: Response,
+    ) -> CustomResult<PaymentsCompleteAuthorizeRouterData, errors::ConnectorError> {
         let response_str = String::from_utf8(res.response.to_vec())
             .change_context(errors::ConnectorError::ResponseDeserializationFailed)?;
 

@@ -84,3 +84,25 @@ pub struct NestpayBillTo {
     #[serde(rename = "Name")]
     pub name: String,
 }
+
+/// CC5Request XML for completing 3DS authentication (step 2 of 3d_pay_hosting flow).
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename = "CC5Request")]
+pub struct NestpayComplete3dsRequest {
+    #[serde(rename = "Name")]
+    pub name: String,
+    #[serde(rename = "Password")]
+    pub password: Secret<String>,
+    #[serde(rename = "ClientId")]
+    pub client_id: String,
+    #[serde(rename = "Type")]
+    pub request_type: String,
+    #[serde(rename = "OrderId")]
+    pub order_id: String,
+    #[serde(rename = "Mode")]
+    pub mode: String,
+    #[serde(rename = "PaRes")]
+    pub pa_res: String,
+    #[serde(rename = "MD")]
+    pub md: String,
+}

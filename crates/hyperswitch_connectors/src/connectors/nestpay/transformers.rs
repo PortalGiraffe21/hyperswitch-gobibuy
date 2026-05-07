@@ -1,9 +1,12 @@
+use std::collections::HashMap;
+
 use base64::Engine;
 use common_enums::enums;
 use common_utils::{
     consts::BASE64_ENGINE,
     crypto::{self, GenerateDigest},
     pii,
+    request::Method,
 };
 use error_stack::ResultExt;
 use hyperswitch_domain_models::{
@@ -11,7 +14,7 @@ use hyperswitch_domain_models::{
     router_data::{ConnectorAuthType, ErrorResponse, RouterData},
     router_flow_types::refunds::{Execute, RSync},
     router_request_types::ResponseId,
-    router_response_types::{PaymentsResponseData, RefundsResponseData},
+    router_response_types::{PaymentsResponseData, RedirectForm, RefundsResponseData},
     types::{RefundExecuteRouterData, RefundsRouterData},
 };
 use hyperswitch_interfaces::{
@@ -133,12 +136,17 @@ impl TryFrom<&NestpayRouterData<&hyperswitch_domain_models::types::PaymentsAutho
                         .get_optional_billing_full_name()
                         .map(|s| s.peek().clone())
                         .unwrap_or_default();
+                    let storetype = if item.router_data.auth_type == enums::AuthenticationType::ThreeDs {
+                        Some("3d_pay_hosting".to_string())
+                    } else {
+                        None
+                    };
                     (
                         Some(card.card_number.clone()),
                         Some(Secret::new(exp)),
                         Some(card.card_cvc.clone()),
                         name,
-                        None,
+                        storetype,
                         None,
                         None,
                         None,
@@ -356,9 +364,26 @@ impl<F, T>
     fn try_from(
         item: ResponseRouterData<F, NestpayCC5Response, T, PaymentsResponseData>,
     ) -> Result<Self, Self::Error> {
-        let status = nestpay_attempt_status(&item.response);
-        let redirection_data = None;
-
+        let (status, redirection_data) = if let (Some(acs_url), Some(pa_req), Some(md)) = (
+            &item.response.acs_url,
+            &item.response.pa_req,
+            &item.response.md,
+        ) {
+            let mut form_fields = HashMap::new();
+            form_fields.insert("PaReq".to_string(), pa_req.clone());
+            form_fields.insert("MD".to_string(), md.clone());
+            // TermUrl (where ACS POSTs back) is added by Hyperswitch infrastructure
+            (
+                enums::AttemptStatus::AuthenticationPending,
+                Some(RedirectForm::Form {
+                    endpoint: acs_url.clone(),
+                    method: Method::Post,
+                    form_fields,
+                }),
+            )
+        } else {
+            (nestpay_attempt_status(&item.response), None)
+        };
 
         let order_id = item
             .response
