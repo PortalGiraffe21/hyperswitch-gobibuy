@@ -9,6 +9,11 @@ jobs:
   docker-build:
     runs-on: ubuntu-latest
     timeout-minutes: 360
+    env:
+          DOCKER_BUILDKIT: 1
+          BUILDKIT_STEP_LOG_MAX_SIZE: 10485760
+          BUILDKIT_STEP_LOG_MAX_SPEED: 10485760
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -23,7 +28,7 @@ jobs:
       - name: Set up Swap Space
         uses: pierotofy/set-swap-space@master
         with:
-          swap-size-gb: 14
+          swap-size-gb: 6
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -38,11 +43,13 @@ jobs:
         with:
           context: .
           push: true
+          provenance: false
+          sbom: false
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/hyperswitch-router:gobibuy
           cache-from: type=gha
-          cache-to: type=gha,mode=max 
-          build-args: |
-            RUSTFLAGS=-C link-arg=-fuse-ld=mold
+          cache-to: type=gha,mode=min
+          build-args:
+            RUSTFLAGS=-C debuginfo=0 -C codegen-units=1
             CARGO_NET_GIT_FETCH_WITH_CLI=true
             CARGO_BUILD_JOBS=1
             CARGO_INCREMENTAL=0
